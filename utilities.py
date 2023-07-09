@@ -6,7 +6,7 @@ from pytube import YouTube
 
 
 ### General utility
-def find_voice_client(client, reference, tries=5):
+async def find_voice_client(client, reference, tries=5):
     if not tries: return False
 
     for voice_client in client.voice_clients:
@@ -15,21 +15,18 @@ def find_voice_client(client, reference, tries=5):
 
     else:
         # Retry
-        sleep(3)
-        return find_voice_client(client, reference, tries=tries-1)
+        await sleep(3)
+        return await find_voice_client(client, reference, tries=tries-1)
 
     return voice_client
 
 
 def get_queue(client, reference):
-    # Get voice
-    voice_client = find_voice_client(client, reference)
-    if not voice_client: raise Exception('Unexpected disconnect.')
-
     # Make identifier
     # Right now, this is per-server queue
     hash = f'{reference.guild.id}'
     if not hash in client.queues:
+        # Stored as (Queue, [Current URL])
         client.queues[hash] = ([], [None])
     return client.queues[hash]
 
@@ -76,6 +73,7 @@ def play_url(voice_client, url, after=None):
     # TODO
 
     # Play
+    # TODO: Normalize volume
     voice_client.play(audio, after=lambda err: after())
     get_queue(voice_client.client, voice_client)[1][0] = url
 

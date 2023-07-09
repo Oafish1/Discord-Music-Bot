@@ -4,7 +4,7 @@ from utilities import *
 async def join(client, message):
     # Get existing voice client and disconnect
     # TODO: Add logic for user not in voice
-    voice_client = find_voice_client(client, message)
+    voice_client = await find_voice_client(client, message)
     if voice_client:
         voice_client.cleanup()
         await voice_client.disconnect()
@@ -17,7 +17,7 @@ async def join(client, message):
 
 async def disconnect(client, message):
     # Get voice client
-    voice_client = find_voice_client(client, message)
+    voice_client = await find_voice_client(client, message)
     if not voice_client:
         await message.reply('Not in a voice channel.')
         return
@@ -29,7 +29,7 @@ async def disconnect(client, message):
 
 async def play(client, message):
     # Get voice client
-    voice_client = find_voice_client(client, message)
+    voice_client = await find_voice_client(client, message)
     if not voice_client:
         voice_client = await join(client, message)
 
@@ -47,7 +47,7 @@ async def play(client, message):
 
 async def skip(client, message):
     # Get voice client
-    voice_client = find_voice_client(client, message)
+    voice_client = await find_voice_client(client, message)
     if not voice_client:
         await message.reply('Not in a voice channel.')
         return
@@ -61,7 +61,7 @@ async def skip(client, message):
 
 async def pause(client, message):
     # Get voice client
-    voice_client = find_voice_client(client, message)
+    voice_client = await find_voice_client(client, message)
     if not voice_client:
         await message.reply('Not in a voice channel.')
         return
@@ -75,7 +75,7 @@ async def pause(client, message):
 
 async def resume(client, message):
     # Get voice client
-    voice_client = find_voice_client(client, message)
+    voice_client = await find_voice_client(client, message)
     if not voice_client:
         await message.reply('Not in a voice channel.')
         return
@@ -89,7 +89,7 @@ async def resume(client, message):
 
 async def previewCurrent(client, message):
     # Get voice client
-    voice_client = find_voice_client(client, message)
+    voice_client = await find_voice_client(client, message)
     if not voice_client:
         await message.reply('Not in a voice channel.')
         return
@@ -103,7 +103,7 @@ async def previewCurrent(client, message):
 
 async def previewNext(client, message):
     # Get voice client
-    voice_client = find_voice_client(client, message)
+    voice_client = await find_voice_client(client, message)
     if not voice_client:
         await message.reply('Not in a voice channel.')
         return
@@ -117,7 +117,7 @@ async def previewNext(client, message):
 
 async def previewQueue(client, message):
     # Get voice client
-    voice_client = find_voice_client(client, message)
+    voice_client = await find_voice_client(client, message)
     if not voice_client:
         await message.reply('Not in a voice channel.')
         return

@@ -72,7 +72,7 @@ async def on_message(message):
         await resume(client, message)
 
     # Preview current song
-    elif command == 'playing' or message.content == 'current':
+    elif command == 'playing' or command == 'current':
         await previewCurrent(client, message)
 
     # Preview next song
