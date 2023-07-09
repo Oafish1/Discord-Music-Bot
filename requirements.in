@@ -1,5 +1,6 @@
 discord
 ffmpeg-python
+numpy
 pip-tools
 PyNaCl
 python-dotenv

@@ -40,7 +40,7 @@ BOT_TOKEN = '<bot-token>'
 
 ### Install Dependencies
 
-Also download [FFMPEG](https://ffmpeg.org/download.html) and add `ffmpeg/bin` to your `PATH` environment variable.
+Download [FFMPEG](https://ffmpeg.org/download.html) and add `ffmpeg/bin` to your `PATH` environment variable.
 
 Install dependencies
 
@@ -48,7 +48,7 @@ Install dependencies
 pip install -r requirements.txt
 ```
 
-*You may need to install `pytube` for `python` separately.  As of `2023-07-09`, the current distribution of `pytube` isn't able to parse links properly, and a modification needs to be made to `cipher.py` in accordance with [this issue](https://github.com/pytube/pytube/issues/1678#issuecomment-1603948730).*
+*You may need to install `pytube` for `python` separately.  As of `2023-07-09`, the current distribution of `pytube` isn't able to parse links properly, and a modification needs to be made to `cipher.py` in accordance with [this issue](https://github.com/pytube/pytube/issues/1678#issuecomment-1603948730).  The modified version of `cipher.py` is found in `pytube/cipher.py`.*
 
 ### Run the Bot
 
@@ -58,9 +58,7 @@ Start the script
 python main.py
 ```
 
-On the first run, the program will ask for `OAuth` information, and will have you configure the program with google by entering a device code online.  Make sure you authorize with the base channel for any email chosen.  This is so that age-restricted videos may be played.
-
-**If you don't care about this feature or don't wish to log in, change `use_oauth=True` to `False` in `utilities.py`.**
+On the first run of an age-restricted video, the program will ask for `OAuth` information, and will have you configure the program with google by entering a device code online.  Make sure you authorize with the base channel for any email chosen.  This is so that age-restricted videos may be played.  If you need to reset your `OAuth` information, delete the `pytube/__cache__` folder in your `pytube` installation.  If you do not wish to provide this information, hit enter on the console window and the song will be skipped.
 
 For quick access, you can also create a batch script
 

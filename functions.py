@@ -1,21 +1,29 @@
 from utilities import *
 
 
+# TODO
+# HIGH PRIORITY Add remove from queue function
+# Add auto disconnect after no activity period
+# Add logic in `join` for user not in voice
+
+
 async def join(client, message):
     # Get existing voice client and disconnect
-    # TODO: Add logic for user not in voice
     voice_client = await find_voice_client(client, message)
     if voice_client:
+        # Erase queue
+        get_queue(client, message)[0].clear()
+        get_queue(client, message)[1][0] = None
         voice_client.cleanup()
         await voice_client.disconnect()
 
     voice_channel = message.author.voice.channel
+    # Can take a second to join, since bot is unverified
     voice_client = voice_channel.connect(self_deaf=False)
 
     return await voice_client
 
 
-# TODO: Add auto disconnect after no activity period
 async def disconnect(client, message):
     # Get voice client
     voice_client = await find_voice_client(client, message)
@@ -53,7 +61,7 @@ async def skip(client, message):
         await message.reply('Not in a voice channel.')
         return
     if not voice_client.is_playing() or voice_client.is_paused():
-        await message.reply('Queue is empty.')
+        await message.reply('No song is playing.')
         return
 
     # Play next
@@ -99,7 +107,8 @@ async def previewCurrent(client, message):
         return
 
     # Show current
-    await message.reply(f'Current Song: {get_queue(client, message)[1][0]}')
+    url = get_queue(client, message)[1][0]
+    await message.reply(f'Current Song: `{get_title_from_link(url)} ({url})`')
 
 
 async def previewNext(client, message):
@@ -113,7 +122,8 @@ async def previewNext(client, message):
         return
 
     # Show next
-    await message.reply(f'Next song: {get_queue(client, message)[0][0]}')
+    url = get_queue(client, message)[0][0]
+    await message.reply(f'Next song: `{get_title_from_link(url)} ({url})`')
 
 
 async def previewQueue(client, message):
@@ -127,7 +137,8 @@ async def previewQueue(client, message):
         return
 
     # Play next
-    await message.reply(
-        'Current Queue:\n'
-        + '\n'.join(get_queue(client, message)[0])
-    )
+    url = get_queue(client, message)[1][0]
+    reply = f'Now Playing: `{get_title_from_link(url)} ({url})`'
+    for i, url in enumerate(get_queue(client, message)[0]):
+        reply += f'\n{i+1}. `{get_title_from_link(url)} ({url})`'
+    await message.reply(reply)

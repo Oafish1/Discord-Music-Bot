@@ -1,3 +1,13 @@
+### 2023-07-09 (4)
+- Add responses
+- Add volume normalization
+- Better link handling and compatibility (e.g. works with `music.youtube.com` now)
+- Fix bug causing retries on first join
+- Fix clap sound before playback by removing `wav` file metadata
+- Move `after` logic outside `play_url`
+- Show YouTube video names in queue previews
+- Update command parsing (e.g. no longer case-sensitive)
+
 ### 2023-07-09 (3)
 - Update `README.md`
 
