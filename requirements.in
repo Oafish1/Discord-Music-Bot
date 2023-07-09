@@ -1,0 +1,7 @@
+discord
+ffmpeg-python
+pip-tools
+PyNaCl
+python-dotenv
+# Need to modify cipher.py for `pytube.YouTube.streams` to work https://github.com/pytube/pytube/issues/1682
+pytube
