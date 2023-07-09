@@ -12,6 +12,8 @@ load_dotenv()
 BOT_TOKEN = os.getenv('BOT_TOKEN')
 HOME_GUILD = os.getenv('HOME_GUILD')
 
+# TODO: Implement whitelist
+
 # Initialize bot
 intents = discord.Intents().none()
 intents.guilds = True
@@ -23,7 +25,8 @@ intents.voice_states = True
 client = discord.Client(command_prefix='!', intents=intents)
 
 
-# Join behavior
+# Initialization behavior
+# TODO: Add auto-leave on exit
 @client.event
 async def on_ready():
     # Check for home guild (verbose output)

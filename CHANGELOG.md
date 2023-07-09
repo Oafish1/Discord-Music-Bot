@@ -1,3 +1,6 @@
+### 2023-07-09 (3)
+- Update `README.md`
+
 ### 2023-07-09 (2)
 - Add changelog
 - Async `find_voice_client` fix for retries

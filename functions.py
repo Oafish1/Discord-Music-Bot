@@ -15,6 +15,7 @@ async def join(client, message):
     return await voice_client
 
 
+# TODO: Add auto disconnect after no activity period
 async def disconnect(client, message):
     # Get voice client
     voice_client = await find_voice_client(client, message)

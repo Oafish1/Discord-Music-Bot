@@ -47,6 +47,8 @@ def play_url(voice_client, url, after=None):
     # Find stream link
     # https://stackoverflow.com/a/67237301
     # TODO: Download while playing others
+    # TODO: Pass oauth message to end-user, rather than to server
+    # Oauth needed for age-restricted, unlisted, or private videos
     yt = YouTube(url, use_oauth=True, allow_oauth_cache=True)  # , use_oauth=True, allow_oauth_cache=True
     stream_url = yt.streams.filter(only_audio=True)[0].url  # TODO sort based on quality
     print(ffmpeg.input(stream_url).output('pipe:', format='wav', acodec='pcm_s16le').audio)
