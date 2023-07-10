@@ -1,3 +1,7 @@
+### 2023-07-09 (6)
+- Add command to remove specific song from queue
+- Change to slash commands rather than message reading
+
 ### 2023-07-09 (5)
 - Added bot status
 - Download audio directly as `pcm` rather than `wav`.

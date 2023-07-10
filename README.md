@@ -4,15 +4,15 @@ Barebones music bot for discord that works with YouTube.
 
 ## Functions
 
-`!join`: Join the voice channel\
-`!leave`: Leave the voice channel\
-`!play <link>`: Play the music specified at `<link>`\
-`!skip <optional-song-number>`: Skip the currently playing song\
-`!pause`: Pause the current song\
-`!resume`: Resume the current song\
-`!playing !current`: Show the currently playing song\
-`!next`: Show the next song\
-`!queue`: Display all songs in the queue
+`join`: Join the voice channel\
+`leave`: Leave the voice channel\
+`play <link>`: Play the music specified at `<link>`\
+`skip <optional-song-number>`: Skip the currently playing song or the song corresponding to `<optional-song-number>`\
+`pause`: Pause the current song\
+`resume`: Resume the current song\
+`current`: Show the currently playing song\
+`next`: Show the next song\
+`queue`: Display all songs in the queue
 
 ## Installation
 
@@ -32,10 +32,12 @@ Create a discord bot account and get a token. This process is seen [here](https:
 <img src='img\privileged_gateway_intents.PNG' alt='Privileged Gateway Intents' width='600'/>
 <img src='img\default_authorization_link.PNG' alt='Default Authorization Link' width='600'/>
 
-Create a file `.env` with the following contents in the home directory, where `<bot-token>` is your token.
+Create a file `.env` with the following contents in the home directory.
 
 ```text
 BOT_TOKEN = '<bot-token>'
+HOME_GUILD_ID = <home-server-id>
+DEV_ID = <your-user-id>
 ```
 
 ### Install Dependencies
@@ -58,7 +60,7 @@ Start the script
 python main.py
 ```
 
-On the first run of an age-restricted video, the program will ask for `OAuth` information, and will have you configure the program with google by entering a device code online.  Make sure you authorize with the base channel for any email chosen.  This is so that age-restricted videos may be played.  If you need to reset your `OAuth` information, delete the `pytube/__cache__` folder in your `pytube` installation.  If you do not wish to provide this information, hit enter on the console window and the song will be skipped.
+On the first run of an age-restricted, unlisted, or private video, the program will ask for `OAuth` information, and will have you configure the program with google by entering a device code online.  Make sure you authorize with the base channel for any email chosen.  This is so that age-restricted videos may be played.  If you need to reset your `OAuth` information, delete the `pytube/__cache__` folder in your `pytube` installation.  If you do not wish to provide this information, hit enter on the console window and the song will be skipped.  Also, `pytube` cannot currently view age-restricted shorts.
 
 For quick access, you can also create a batch script
 

@@ -11,6 +11,7 @@ from pytube import YouTube
 
 
 # TODO
+# HIGH PRIORITY Cut out clap at end of song
 # Add crossfade between songs with pydub
 # Add search feature for !play
 # Add functionality for stream?
@@ -22,29 +23,28 @@ from pytube import YouTube
 # Maybe call `after` after rather than recurse
 # Refine `is_youtube_link`
 # Store queueing user
-# Fix clap at beginning and end of song
 # Stream music rather than download all at once
 
 
 ### General utility
-async def find_voice_client(client, reference, tries=1):
+async def find_voice_client(client, interaction, tries=1):
     for voice_client in client.voice_clients:
-        if reference.guild == voice_client.guild:
+        if interaction.guild == voice_client.guild:
             break
 
     else:
         # Retry (not used right now)
         if tries <= 1: return False
         await sleep(3)
-        return await find_voice_client(client, reference, tries=tries-1)
+        return await find_voice_client(client, interaction, tries=tries-1)
 
     return voice_client
 
 
-def get_queue(client, reference):
+def get_queue(client, interaction):
     # Make identifier
     # Right now, this is per-server queue
-    hash = f'{reference.guild.id}'
+    hash = f'{interaction.guild.id}'
     if not hash in client.queues:
         # Stored as (Queue, [Current URL])
         client.queues[hash] = ([], [None])
@@ -56,10 +56,11 @@ def is_youtube_link(url):
 
 
 def get_youtube_from_link(url):
-    yt = YouTube(url)
+    yt = YouTube(url, use_oauth=True, allow_oauth_cache=True)
     try:
         yt.check_availability()
         yt.bypass_age_gate()
+        yt.streams
     except:
         yt = YouTube(url, use_oauth=True, allow_oauth_cache=True)
         # Not sure if it's possible to pipe to user, since input() command freezes
@@ -78,9 +79,9 @@ def get_title_from_link(url):
 
 
 ### Behavior wrappers
-async def type_during(reference, f):
-    async with reference.channel.typing():
-        await f
+# async def type_during(reference, f):
+#     async with reference.channel.typing():
+#         await f
 
 
 ### Play functions
