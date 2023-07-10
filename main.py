@@ -5,6 +5,7 @@ import typing
 import discord
 from discord import app_commands
 from dotenv import load_dotenv
+import numpy as np
 
 from functions import *
 from utilities import *
@@ -13,6 +14,7 @@ from utilities import *
 # TODO
 # HIGH PRIORITY Change name to magic music bot
 # HIGH PRIORITY Disable heartbeat warning (for input to OAuth)
+# What should the publicity of the `sync_local` command be?
 # Add timeout to messages
 # Add auto-leave on program exit
 # Detect channel change
@@ -34,22 +36,17 @@ intents.message_content = True
 intents.voice_states = True
 
 # Create client
-client = discord.Client(command_prefix='!', intents=intents)
+client = discord.Client(intents=intents, status=discord.Status.online, activity=discord.Game('🎵some tunes🎵'))
 tree = app_commands.CommandTree(client)
 
 
 # Initialization behavior
 @client.event
 async def on_ready():
-    print('If this is the initial launch, please run `!sync_local` in your server.')
     print('Bot initializing, please wait...')
 
-    # Sync
-    await tree.sync()  # Global
-    await tree.sync(guild=discord.Object(id=HOME_GUILD_ID))  # Local
-
-    # Status
-    await client.change_presence(status=discord.Status.online, activity=discord.Game('🎵some tunes🎵'))
+    # Global sync
+    await tree.sync()
 
     # Setup
     client.queues = {}
@@ -57,24 +54,6 @@ async def on_ready():
     asyncio.set_event_loop(loop)
 
     print('Bot is configured, ready to operate.')
-
-
-# Backup sync
-# @client.event
-# async def on_message(message):
-#     if message.content != '!sync_local': return
-#     # Reject if not owner, admin, or dev
-#     owner = message.author == message.guild.owner
-#     admin = np.array([role.permissions.administrator for role in message.author.roles]).any()
-#     dev = message.author.id == DEV_ID
-#     if not (owner or admin or dev):
-#         await message.add_reaction('❌')
-#         return
-#     # Sync all commands locally
-#     loop = asyncio.get_running_loop()
-#     loop.create_task(tree.sync())
-#     print(f'Commands synced with {message.guild.name} ({message.guild.id})')
-#     await message.add_reaction('👍')
 
 
 # Commands
@@ -89,25 +68,23 @@ async def command_join(interaction):
         await interaction.followup.send('❌')
         return
     # Sync all commands globally
-    loop = asyncio.get_running_loop()
-    loop.create_task(tree.sync())
+    await tree.sync()
     print(f'Commands globally synced')
     await interaction.followup.send('👍')
 
 
-@tree.command(name='sync_local', description='Synchronize commands locally', guild=discord.Object(id=HOME_GUILD_ID))
+@tree.command(name='sync_local', description='Synchronize commands locally')
 async def command_join(interaction):
     await interaction.response.defer(ephemeral=True)
-    # Reject if not dev
-    # owner = interaction.user == interaction.guild.owner
-    # admin = np.array([role.permissions.administrator for role in interaction.user.roles]).any()
+    # Reject if not dev, owner, or admin
+    owner = interaction.user == interaction.guild.owner
+    admin = np.array([role.permissions.administrator for role in interaction.user.roles]).any()
     dev = interaction.user.id == DEV_ID
-    if not dev:
+    if not (dev or owner or admin):
         await interaction.followup.send('❌')
         return
     # Sync all commands locally
-    loop = asyncio.get_running_loop()
-    loop.create_task(tree.sync(guild=interaction.guild))
+    await tree.sync(guild=interaction.guild)
     print(f'Commands synced with {interaction.guild.name} ({interaction.guild.id})')
     await interaction.followup.send('👍')
 
@@ -115,9 +92,7 @@ async def command_join(interaction):
 @tree.command(name='join', description='Join the voice channel')
 async def command_join(interaction):
     await interaction.response.defer(ephemeral=True)
-    loop = asyncio.get_running_loop()
-    loop.create_task(join(client, interaction))
-    await interaction.followup.send('👍')
+    await join(client, interaction)
 
 
 @tree.command(name='leave', description='Leave the voice channel')

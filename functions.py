@@ -11,7 +11,7 @@ from utilities import *
 # Add song history
 
 
-async def join(client, interaction):
+async def join(client, interaction, verbose=True):
     # Get existing voice client and disconnect
     voice_client = await find_voice_client(client, interaction)
     if voice_client:
@@ -21,11 +21,19 @@ async def join(client, interaction):
         voice_client.cleanup()
         await voice_client.disconnect()
 
+    # Get channel
     voice_channel = interaction.user.voice.channel
     # voice_channel = interaction.guild.voice_channels[0]  # DEBUG
-    voice_client = voice_channel.connect(self_deaf=False)
 
-    return await voice_client
+    # Wait until connected
+    voice_client = await voice_channel.connect(self_deaf=False)
+    while not voice_client.is_connected():
+        await asyncio.sleep(1)
+
+    # Return
+    if verbose:
+        await interaction.followup.send('👍')
+    return voice_client
 
 
 async def leave(client, interaction):
@@ -49,14 +57,15 @@ async def play(client, interaction, *, url):
     # Get voice client
     voice_client = await find_voice_client(client, interaction)
     if not voice_client:
-        voice_client = await join(client, interaction)
+        voice_client = await join(client, interaction, verbose=False)
 
     # Add to queue
-    get_queue(client, interaction)[0].append(url)
+    queue = get_queue(client, interaction)
+    queue[0].append(url)
 
     # Play
-    if not voice_client.is_playing():
-        play_next_queue(client, voice_client)
+    if not (queue[1][0] or (len(queue[0]) > 1)):
+        await play_next_queue(client, voice_client)
 
     await interaction.followup.send('👍')
 
@@ -154,7 +163,7 @@ async def previewQueue(client, interaction):
     if not voice_client:
         await interaction.followup.send('Not in a voice channel.')
         return
-    if not get_queue(client, interaction)[1]:
+    if not get_queue(client, interaction)[1][0]:
         await interaction.followup.send('Queue empty.')
         return
 

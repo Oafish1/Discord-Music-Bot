@@ -1,4 +1,4 @@
-from asyncio import sleep
+import asyncio
 import struct
 
 import discord
@@ -8,10 +8,11 @@ from pytube import YouTube
 
 
 # TODO
-# HIGH PRIORITY Cut out clap at beginning and end of song
 # HIGH PRIORITY Add song history
 # HIGH PRIORITY Cut playlist tag from YouTube URL
 # HIGH PRIORITY Remove FFMPEG printing, add debug prints for HOME_GUILD
+# MEDIUM PRIORITY Preload video on request using async ffmpeg
+# MEDIUM PRIORITY Pass oauth message to end-user, rather than to server.  Make async so heartbeat doesn't die
 # Store creds for each guild?
 # Add message for skipping song/reject if bad link instead of adding to queue
 # Maybe skip to song in queue option?  Maybe reorder?
@@ -20,11 +21,8 @@ from pytube import YouTube
 # Add crossfade between songs with pydub
 # Add search feature for !play
 # Add functionality for stream?
-# Download while playing others
 # Check which device works with InnerTube
 # sort based on quality (already done?)
-# Pass oauth message to end-user, rather than to server
-# Only ask for OAuth if age restricted or unavailable
 # Maybe call `after` after rather than recurse
 # Refine `is_youtube_link`
 # Store queueing user
@@ -40,8 +38,13 @@ async def find_voice_client(client, interaction, tries=1):
     else:
         # Retry (not used right now)
         if tries <= 1: return False
-        await sleep(3)
+        await asyncio.sleep(3)
         return await find_voice_client(client, interaction, tries=tries-1)
+
+    # Safeguard for spam joins
+    while not voice_client.is_connected():
+        print('Sleeping FVC. Normally a result of a `play` command before the `join` command finishes.  If this persists, please make a bug report.')
+        await asyncio.sleep(1)
 
     return voice_client
 
@@ -83,21 +86,18 @@ def get_title_from_link(url):
     return YouTube(url).title
 
 
-### Behavior wrappers
-# async def type_during(reference, f):
-#     async with reference.channel.typing():
-#         await f
-
-
 ### Play functions
-def play_next_queue(client, voice_client):
+async def play_next_queue(client, voice_client):
     if not get_queue(client, voice_client)[0]:
         get_queue(client, voice_client)[1][0] = None
         return
-    play_url(voice_client, get_queue(client, voice_client)[0].pop(0), after=lambda err: play_next_queue(client, voice_client))
+    # Get loop
+    loop = asyncio.get_running_loop()
+    url = get_queue(voice_client.client, voice_client)[1][0] = get_queue(client, voice_client)[0].pop(0)  # Need to set here otherwise race condition in `play`
+    await play_url(voice_client, url, after=lambda err: loop.create_task(play_next_queue(client, voice_client)))
 
 
-def play_url(voice_client, url, after=None):
+async def play_url(voice_client, url, after=None):
     # Play if not YouTube
     if not is_youtube_link(url):
         # Can't FFmpegPCMAudio directly b/c youtube is blocked
@@ -109,37 +109,50 @@ def play_url(voice_client, url, after=None):
     # Oauth needed for age-restricted, unlisted, or private videos
     yt = get_youtube_from_link(url)
     stream_url = yt.streams.filter(only_audio=True)[0].url
-    source, _ = (
+    download = (
         ffmpeg
             .input(stream_url)
-            .output('pipe:', format='s16le', acodec='pcm_s16le', ar=48000)
-            .run(capture_stdout=True)
+            .output('pipe:', format='s16le', acodec='pcm_s16le', ar=48000, loglevel='error')
+            .run_async(pipe_stdout=True)
     )
+    data, _ = download.communicate()
 
     # Normalize with Pydub
-    sound = pydub.AudioSegment(data=source, sample_width=2, frame_rate=48000, channels=2)
+    sound = pydub.AudioSegment(data=data, sample_width=2, frame_rate=48000, channels=2)
     sound = pydub.effects.normalize(sound, headroom=20)  # 6 is standard, but also very loud for most
     # sound.export("audio.wav", format="wav")  # DEBUG
 
-    # Read as file
-    # Nested for compatibility
-    audio = discord.PCMAudio(RawReader(sound.raw_data))
+    # Read as file/stream
+    audio = RawReader(sound.raw_data)
 
     # Play
     voice_client.play(audio, after=after)
-    get_queue(voice_client.client, voice_client)[1][0] = url
 
 
 ### Classes
 class RawReader(discord.AudioSource):
-    def __init__(self, source):
+    def __init__(self, data, sampling_rate=48_000, channels=2, frame_length=20):
         self.index = 0
-        self.source = source
-        self.frame_size = int(48000 / 1000 * 20) * struct.calcsize('h') * 2
+        self.data = data
+
+        self.sampling_rate = sampling_rate
+        self.channels = channels
+        self.frame_length = frame_length  # ms
+
+        # Calculate frame size
+        self.samples_per_frame = int(self.sampling_rate * self.frame_length / 1000)
+        self.sample_size = struct.calcsize('h') * self.channels
+        self.frame_size = self.samples_per_frame * self.sample_size
 
     def read(self):
+        # Increment
         self.index += self.frame_size
-        return self.source[self.index : self.index + self.frame_size]
+        # Return if not enough data
+        if self.index + self.frame_size > len(self.data):
+            # Clip to avoid clapping noise
+            return b''
+        # Return data
+        return self.data[self.index : self.index + self.frame_size]
 
     def is_opus(self):
         return False

@@ -1,3 +1,15 @@
+### 2023-07-10 (3)
+- Await commands which modify rather than add to loop, avoid race conditions
+- Bugfix in `play` for weird behavior with multiple songs rapidly queued and paused songs
+- Change `RawReader` to not require `discord.PCMAudio`
+- Change `sync_local` permissions
+- Fixed bug with spamming `play` on channel join not playing anything
+- Make playing functions async in preparation for background downloading
+- Modify command status return behavior
+- Modify initialization
+- Mute regular console output for ffmpeg
+- Small hierarchy changes
+
 ### 2023-07-10 (2)
 - Added `sync_local` command
 - Fix `tree.sync(...)` implementations to properly function

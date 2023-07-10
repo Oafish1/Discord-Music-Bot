@@ -12,7 +12,9 @@ Barebones music bot for discord that works with YouTube.
 `/resume`: Resume the current song\
 `/current`: Show the currently playing song\
 `/next`: Show the next song\
-`/queue`: Display all songs in the queue
+`/queue`: Display all songs in the queue\
+`/sync_local`: Sync server-specific commands\
+`/sync_global`: Sync server commands with global commands (only available after running `sync_local` on your home server)
 
 ## Installation
 
@@ -32,7 +34,7 @@ Create a discord bot account and get a token. This process is seen [here](https:
 <img src='img\privileged_gateway_intents.PNG' alt='Privileged Gateway Intents' width='600'/>
 <img src='img\default_authorization_link.PNG' alt='Default Authorization Link' width='600'/>
 
-Create a file `.env` with the following contents in the home directory.
+Create a file `.env` with the following contents in the home directory.  Where `<bot-token>` is your bot token, `<home-server-id>` is the ID of your main server (enable developer mode and right click on the server), and `<your-user-id>` is your user id (click on your name in the bottom left of the discord window).
 
 ```text
 BOT_TOKEN = '<bot-token>'
