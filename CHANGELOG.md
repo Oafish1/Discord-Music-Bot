@@ -1,4 +1,11 @@
-### 2023-07-10
+### 2023-07-10 (2)
+- Added `sync_local` command
+- Fix `tree.sync(...)` implementations to properly function
+- New guild configurations
+- Now works on multiple servers at once
+- Revise sync behavior
+
+### 2023-07-10 (1)
 - Add rate-limiting warning message
 - Change `url` argument for `play` to be required
 - Fix popping noise at beginning/end of voice chat playback

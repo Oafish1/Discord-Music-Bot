@@ -10,6 +10,12 @@ from pytube import YouTube
 # TODO
 # HIGH PRIORITY Cut out clap at beginning and end of song
 # HIGH PRIORITY Add song history
+# HIGH PRIORITY Cut playlist tag from YouTube URL
+# HIGH PRIORITY Remove FFMPEG printing, add debug prints for HOME_GUILD
+# Store creds for each guild?
+# Add message for skipping song/reject if bad link instead of adding to queue
+# Maybe skip to song in queue option?  Maybe reorder?
+# Replace song function?
 # Cleaner solution for `PCMAudio`
 # Add crossfade between songs with pydub
 # Add search feature for !play

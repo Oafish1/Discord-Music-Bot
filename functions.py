@@ -2,6 +2,9 @@ from utilities import *
 
 
 # TODO
+# MEDIUM PRIORITY Add time left in song/queue
+# Handle edge case where play is called between songs?  Add lock?
+# Maybe allow /play when user not in voice?
 # Add auto disconnect after no activity period
 # Add logic in `join` for user not in voice
 # Add song swap functionality
