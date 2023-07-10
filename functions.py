@@ -5,6 +5,7 @@ from utilities import *
 # Add auto disconnect after no activity period
 # Add logic in `join` for user not in voice
 # Add song swap functionality
+# Add song history
 
 
 async def join(client, interaction):
@@ -18,6 +19,7 @@ async def join(client, interaction):
         await voice_client.disconnect()
 
     voice_channel = interaction.user.voice.channel
+    # voice_channel = interaction.guild.voice_channels[0]  # DEBUG
     voice_client = voice_channel.connect(self_deaf=False)
 
     return await voice_client

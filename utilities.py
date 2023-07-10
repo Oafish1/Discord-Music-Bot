@@ -1,17 +1,16 @@
 from asyncio import sleep
-from contextlib import redirect_stdout
-import io
 import struct
 
 import discord
 import ffmpeg
-import numpy as np
 import pydub
 from pytube import YouTube
 
 
 # TODO
-# HIGH PRIORITY Cut out clap at end of song
+# HIGH PRIORITY Cut out clap at beginning and end of song
+# HIGH PRIORITY Add song history
+# Cleaner solution for `PCMAudio`
 # Add crossfade between songs with pydub
 # Add search feature for !play
 # Add functionality for stream?
@@ -56,7 +55,7 @@ def is_youtube_link(url):
 
 
 def get_youtube_from_link(url):
-    yt = YouTube(url, use_oauth=True, allow_oauth_cache=True)
+    yt = YouTube(url)
     try:
         yt.check_availability()
         yt.bypass_age_gate()
@@ -117,18 +116,27 @@ def play_url(voice_client, url, after=None):
     # sound.export("audio.wav", format="wav")  # DEBUG
 
     # Read as file
-    audio = DumbReader(sound.raw_data)
+    # Nested for compatibility
+    audio = discord.PCMAudio(RawReader(sound.raw_data))
 
     # Play
     voice_client.play(audio, after=after)
     get_queue(voice_client.client, voice_client)[1][0] = url
 
 
-class DumbReader(discord.AudioSource):
+### Classes
+class RawReader(discord.AudioSource):
     def __init__(self, source):
         self.index = 0
         self.source = source
+        self.frame_size = int(48000 / 1000 * 20) * struct.calcsize('h') * 2
 
-    def read(self, window_size=3840):
-        self.index += window_size
-        return self.source[self.index : self.index + window_size]
+    def read(self):
+        self.index += self.frame_size
+        return self.source[self.index : self.index + self.frame_size]
+
+    def is_opus(self):
+        return False
+
+    def cleanup(self):
+        pass

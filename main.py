@@ -11,6 +11,7 @@ from utilities import *
 
 
 # TODO
+# Add command for local `tree.sync` so that we don't get rate-limited during development
 # Add auto-leave on program exit
 # Detect channel change
 # Implement whitelist
@@ -44,9 +45,14 @@ sync_guild = discord.Object(id=HOME_GUILD_ID)
 # Initialization behavior
 @client.event
 async def on_ready():
+    print('Bot initializing, please wait...')
+    print(
+        'If launched quickly in succession, the bot will be rate-limited by discord. '
+        'If you are not making any dev changes, you may uncomment `await tree.sync(...)` below to avoid this.')
+
     # Sync commands to home guild
     guild = client.get_guild(int(HOME_GUILD_ID))
-    # await tree.sync(guild=guild)
+    await tree.sync(guild=guild)
     print(f'Commands synced with {guild.name} ({guild.id})')
 
     # Status
@@ -56,7 +62,6 @@ async def on_ready():
     client.queues = {}
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
-    # loop.run_forever()
 
     print('Bot is configured, ready to operate.')
 

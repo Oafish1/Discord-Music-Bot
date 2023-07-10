@@ -1,3 +1,10 @@
+### 2023-07-10
+- Add rate-limiting warning message
+- Change `url` argument for `play` to be required
+- Fix popping noise at beginning/end of voice chat playback
+- More guidance in `README.md`
+- Slash command sync bugfix
+
 ### 2023-07-09 (6)
 - Add command to remove specific song from queue
 - Change to slash commands rather than message reading

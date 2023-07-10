@@ -4,15 +4,15 @@ Barebones music bot for discord that works with YouTube.
 
 ## Functions
 
-`join`: Join the voice channel\
-`leave`: Leave the voice channel\
-`play <link>`: Play the music specified at `<link>`\
-`skip <optional-song-number>`: Skip the currently playing song or the song corresponding to `<optional-song-number>`\
-`pause`: Pause the current song\
-`resume`: Resume the current song\
-`current`: Show the currently playing song\
-`next`: Show the next song\
-`queue`: Display all songs in the queue
+`/join`: Join the voice channel\
+`/leave`: Leave the voice channel\
+`/play <link>`: Play the music specified at `<link>`\
+`/skip <optional-song-number>`: Skip the currently playing song or the song corresponding to `<optional-song-number>`\
+`/pause`: Pause the current song\
+`/resume`: Resume the current song\
+`/current`: Show the currently playing song\
+`/next`: Show the next song\
+`/queue`: Display all songs in the queue
 
 ## Installation
 
@@ -27,7 +27,7 @@ cd Discord-Music-Bot-main
 
 ### Bot Configuration
 
-Create a discord bot account and get a token. This process is seen [here](https://discordgsm.com/guide/how-to-get-a-discord-bot-token).  Configure the `Bot` and `OAuth2` tabs as below.  After configuring, invite the bot to your server using the link generator on the `OAuth2` dropdown (select bot and permissions as below).
+Create a discord bot account and get a token. This process is seen [here](https://discordgsm.com/guide/how-to-get-a-discord-bot-token).  **Do not include `discord` in your project name**.  Configure the `Bot` and `OAuth2` tabs as below.  After configuring, invite the bot to your server using the link generator on the `OAuth2` dropdown (select bot and permissions as below).
 
 <img src='img\privileged_gateway_intents.PNG' alt='Privileged Gateway Intents' width='600'/>
 <img src='img\default_authorization_link.PNG' alt='Default Authorization Link' width='600'/>
@@ -50,7 +50,7 @@ Install dependencies
 pip install -r requirements.txt
 ```
 
-*You may need to install `pytube` for `python` separately.  As of `2023-07-09`, the current distribution of `pytube` isn't able to parse links properly, and a modification needs to be made to `cipher.py` in accordance with [this issue](https://github.com/pytube/pytube/issues/1678#issuecomment-1603948730).  The modified version of `cipher.py` is found in `pytube/cipher.py`.*
+*You may need to install `pytube` for `python` separately.  As of `2023-07-09`, the current distribution of `pytube` isn't able to parse links properly, and a modification needs to be made to `cipher.py` in accordance with [this issue](https://github.com/pytube/pytube/issues/1678#issuecomment-1603948730).  The modified version of `cipher.py` is found in `pytube/cipher.py`.  For this reason, `pytube` is not included in `requirements.txt`.*
 
 ### Run the Bot
 
