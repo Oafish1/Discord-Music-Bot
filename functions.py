@@ -18,7 +18,7 @@ async def join(client, message):
         await voice_client.disconnect()
 
     voice_channel = message.author.voice.channel
-    # Can take a second to join, since bot is unverified
+    # voice_channel = message.guild.voice_channels[0]  # DEBUG
     voice_client = voice_channel.connect(self_deaf=False)
 
     return await voice_client
@@ -55,6 +55,9 @@ async def play(client, message):
 
 
 async def skip(client, message):
+    split_message = message.content.split(' ')
+    index = int(split_message[1]) if len(split_message) > 1 else 0
+
     # Get voice client
     voice_client = await find_voice_client(client, message)
     if not voice_client:
@@ -63,9 +66,15 @@ async def skip(client, message):
     if not voice_client.is_playing() or voice_client.is_paused():
         await message.reply('No song is playing.')
         return
+    if len(get_queue(client, message)[0]) < index:
+        await message.reply(f'Queue only contains {len(get_queue(client, message)[0])} songs.')
+        return
 
     # Play next
-    voice_client.stop()
+    if index == 0:
+        voice_client.stop()
+        return
+    get_queue(client, message)[0].pop(index - 1)
 
 
 async def pause(client, message):
@@ -132,7 +141,7 @@ async def previewQueue(client, message):
     if not voice_client:
         await message.reply('Not in a voice channel.')
         return
-    if not get_queue(client, message)[0]:
+    if not get_queue(client, message)[1]:
         await message.reply('Queue empty.')
         return
 

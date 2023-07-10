@@ -1,3 +1,10 @@
+### 2023-07-09 (5)
+- Added bot status
+- Download audio directly as `pcm` rather than `wav`.
+- Optimize await behavior.
+- Send `...now typing...` indicator while processing
+- Switch normalization method to use `pydub` rather than manual
+
 ### 2023-07-09 (4)
 - Add responses
 - Add volume normalization

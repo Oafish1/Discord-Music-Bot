@@ -7,7 +7,7 @@ Barebones music bot for discord that works with YouTube.
 `!join`: Join the voice channel\
 `!leave`: Leave the voice channel\
 `!play <link>`: Play the music specified at `<link>`\
-`!skip`: Skip the currently playing song\
+`!skip <optional-song-number>`: Skip the currently playing song\
 `!pause`: Pause the current song\
 `!resume`: Resume the current song\
 `!playing !current`: Show the currently playing song\

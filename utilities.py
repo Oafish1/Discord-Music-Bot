@@ -6,20 +6,24 @@ import struct
 import discord
 import ffmpeg
 import numpy as np
+import pydub
 from pytube import YouTube
 
 
 # TODO
+# Add crossfade between songs with pydub
+# Add search feature for !play
 # Add functionality for stream?
 # Download while playing others
 # Check which device works with InnerTube
-# Maybe just save to s16le?
 # sort based on quality (already done?)
 # Pass oauth message to end-user, rather than to server
 # Only ask for OAuth if age restricted or unavailable
 # Maybe call `after` after rather than recurse
 # Refine `is_youtube_link`
 # Store queueing user
+# Fix clap at beginning and end of song
+# Stream music rather than download all at once
 
 
 ### General utility
@@ -73,6 +77,12 @@ def get_title_from_link(url):
     return YouTube(url).title
 
 
+### Behavior wrappers
+async def type_during(reference, f):
+    async with reference.channel.typing():
+        await f
+
+
 ### Play functions
 def play_next_queue(client, voice_client):
     if not get_queue(client, voice_client)[0]:
@@ -96,39 +106,17 @@ def play_url(voice_client, url, after=None):
     source, _ = (
         ffmpeg
             .input(stream_url)
-            .output('pipe:', format='wav', acodec='pcm_s16le', ar=48000)
+            .output('pipe:', format='s16le', acodec='pcm_s16le', ar=48000)
             .run(capture_stdout=True)
     )
 
-    # Remove metadata header
-    data_start_index = source.find(b'data') + 8
-    header, source = source[:data_start_index], source[data_start_index:]
+    # Normalize with Pydub
+    sound = pydub.AudioSegment(data=source, sample_width=2, frame_rate=48000, channels=2)
+    sound = pydub.effects.normalize(sound, headroom=20)  # 6 is standard, but also very loud for most
+    # sound.export("audio.wav", format="wav")  # DEBUG
 
-    # Read short little endian
-    source = np.array(struct.unpack(f'<{"h" * (len(source) // 2)}', source))
-
-    # Normalize
-    max_peak = 2**11 - 1  # 2**15 - 1 makes the song max volume
-    source = source / (np.max(np.abs(source)) / max_peak)
-    source = source.astype(np.int16)
-
-    # Write short little endian
-    source = struct.pack(f'<{"h" * (len(source))}', *source)
-
-    # Play
-    # Download locally (dumb, not multi-instance safe)
-    # with open('audio.wav', 'wb') as f:
-    #     f.write(header + source)
-    # audio = discord.FFmpegPCMAudio('audio.wav')
-
-    # Read var as file (even dumber, but multi-instance safe)
-    # audio = discord.PCMAudio(DumbReader(source))
-
-    # Read whole file (okayer)
-    audio = DumbReader(source)
-
-    # Read filestream (like a competent person)
-    # TODO
+    # Read as file
+    audio = DumbReader(sound.raw_data)
 
     # Play
     voice_client.play(audio, after=after)
