@@ -1,23 +1,17 @@
 from utilities import *
 
 
-# TODO
-# MEDIUM PRIORITY Add time left in song/queue
-# Handle edge case where play is called between songs?  Add lock?
-# Maybe allow /play when user not in voice?
-# Add auto disconnect after no activity period
-# Add logic in `join` for user not in voice
-# Add song swap functionality
-# Add song history
-
-
+### VC commands
 async def join(client, interaction, verbose=True):
     # Get existing voice client and disconnect
     voice_client = await find_voice_client(client, interaction)
+    if voice_client and voice_client.channel == interaction.user.voice.channel:
+        if verbose:
+            await interaction.followup.send('Already in channel.')
+        return voice_client
     if voice_client:
         # Erase queue
-        get_queue(client, interaction)[0].clear()
-        get_queue(client, interaction)[1][0] = None
+        erase_queue(client, interaction)
         voice_client.cleanup()
         await voice_client.disconnect()
 
@@ -50,29 +44,76 @@ async def leave(client, interaction):
     await interaction.followup.send('👍')
 
 
+### Play commands
 async def play(client, interaction, *, url):
-    # Defaults
-    url = url if url else 'https://www.youtube.com/watch?v=y6120QOlsfU'  # 'https://www.youtube.com/watch?v=zvq9r6R6QAY'
-
-    # Get voice client
+    # Get voice client and join user
     voice_client = await find_voice_client(client, interaction)
-    if not voice_client:
+    if not voice_client or not voice_client.channel == interaction.user.voice.channel:
         voice_client = await join(client, interaction, verbose=False)
 
+    # Defaults
+    url = url if url else 'https://www.youtube.com/watch?v=y6120QOlsfU'
+
     # Add to queue
-    queue = get_queue(client, interaction)
-    queue[0].append(url)
+    queue = add_to_queue(client, interaction, url=url)
+    if not queue:
+        await interaction.followup.send('Queue is full. Please wait and try again')
+        return
 
     # Play
-    if not (queue[1][0] or (len(queue[0]) > 1)):
+    if not (queue['current'] or (len(queue['queue']) > 1)):
         await play_next_queue(client, voice_client)
 
     await interaction.followup.send('👍')
 
 
+async def play_next_queue(client, voice_client):
+    queue = cycle_queue(client, voice_client)
+    if not queue['current']: return
+    url, _ = queue['current'][0]
+    loop = asyncio.get_running_loop()
+    await play_url(voice_client, url, after=lambda err: loop.create_task(play_next_queue(client, voice_client)))
+
+
+async def play_url(voice_client, url, after=None):
+    # Play if not YouTube
+    if not is_youtube_link(url):
+        # Can't FFmpegPCMAudio directly b/c youtube is blocked
+        voice_client.play(discord.FFmpegPCMAudio(url))
+        return
+
+    # Find stream link
+    # https://stackoverflow.com/a/67237301
+    # Oauth needed for age-restricted, unlisted, or private videos
+    yt = get_youtube_from_link(url)
+    stream_url = yt.streams.filter(only_audio=True)[0].url
+    download = (
+        ffmpeg
+            .input(stream_url)
+            .output('pipe:', format='s16le', acodec='pcm_s16le', ar=48000, loglevel='error')
+            .run_async(pipe_stdout=True)
+    )
+    data, _ = download.communicate()
+
+    # Normalize with Pydub
+    sound = pydub.AudioSegment(data=data, sample_width=2, frame_rate=48000, channels=2)
+    sound = pydub.effects.normalize(sound, headroom=20)  # 6 is standard, but also very loud for most
+    # sound.export('audio.wav', format='wav')  # DEBUG
+
+    # Read as file/stream
+    audio = RawReader(sound.raw_data)
+
+    # Play
+    voice_client.play(audio, after=after)
+
+
+### Management commands
 async def skip(client, interaction, *, index):
     # Defaults
     index = index if index else 0
+
+    # Get queue
+    queue = get_queue(client, interaction)
 
     # Get voice client
     voice_client = await find_voice_client(client, interaction)
@@ -82,15 +123,15 @@ async def skip(client, interaction, *, index):
     if not voice_client.is_playing() or voice_client.is_paused():
         await interaction.followup.send('No song is playing.')
         return
-    if len(get_queue(client, interaction)[0]) < index:
-        await interaction.followup.send(f'Queue only contains {len(get_queue(client, interaction)[0])} songs.')
+    if len(queue['queue']) < index:
+        await interaction.followup.send(f'Queue only contains {len(queue["queue"])} songs.')
         return
 
     # Play next
     if index == 0:
         voice_client.stop()
     else:
-        get_queue(client, interaction)[0].pop(index - 1)
+        queue['queue'].pop(index - 1)  # Should this be added to history? Probably not
 
     await interaction.followup.send('👍')
 
@@ -127,49 +168,86 @@ async def resume(client, interaction):
     await interaction.followup.send('👍')
 
 
+### Preview commands
 async def previewCurrent(client, interaction):
+    queue = get_queue(client, interaction)
+
     # Get voice client
     voice_client = await find_voice_client(client, interaction)
     if not voice_client:
         await interaction.followup.send('Not in a voice channel.')
         return
-    if not get_queue(client, interaction)[1][0]:
+    if not queue['current']:
         await interaction.followup.send('No song playing.')
         return
 
     # Show current
-    url = get_queue(client, interaction)[1][0]
-    await interaction.followup.send(f'Current Song: `{get_title_from_link(url)} ({url})`')
+    url, user = queue['current'][0]
+    await interaction.followup.send(f'Current Song: `{get_title_from_link(url)} ({user.name})`')
 
 
 async def previewNext(client, interaction):
+    queue = get_queue(client, interaction)
+
     # Get voice client
     voice_client = await find_voice_client(client, interaction)
     if not voice_client:
         await interaction.followup.send('Not in a voice channel.')
         return
-    if not get_queue(client, interaction)[0]:
+    if not queue['queue']:
         await interaction.followup.send('Queue empty.')
         return
 
     # Show next
-    url = get_queue(client, interaction)[0][0]
-    await interaction.followup.send(f'Next song: `{get_title_from_link(url)} ({url})`')
+    url, user = queue['queue'][0]
+    await interaction.followup.send(f'Next song: `{get_title_from_link(url)} ({user.name})`')
 
 
 async def previewQueue(client, interaction):
+    # Edge case where queue has something in it but queue doesn't will crash `previewQueue`
+    # Get queue
+    queue = get_queue(client, interaction)
+
     # Get voice client
     voice_client = await find_voice_client(client, interaction)
     if not voice_client:
         await interaction.followup.send('Not in a voice channel.')
         return
-    if not get_queue(client, interaction)[1][0]:
+    if not queue['current']:
         await interaction.followup.send('Queue empty.')
         return
 
-    # Play next
-    url = get_queue(client, interaction)[1][0]
-    reply = f'Now Playing: `{get_title_from_link(url)} ({url})`'
-    for i, url in enumerate(get_queue(client, interaction)[0]):
-        reply += f'\n{i+1}. `{get_title_from_link(url)} ({url})`'
+    # Show current
+    url, user = queue['current'][0]
+    reply = f'Now Playing: `{get_title_from_link(url)} ({user.name})`'
+
+    # End early if no more songs
+    if not queue['queue']:
+        await interaction.followup.send(reply)
+        return
+
+    # Show queue
+    reply += '\nSong Queue:'
+    for i, (url, user) in enumerate(queue['queue']):
+        reply += f'\n{i+1}. `{get_title_from_link(url)} ({user.name})`'
+    await interaction.followup.send(reply)
+
+
+async def previewHistory(client, interaction):
+    # Get queue
+    queue = get_queue(client, interaction)
+
+    # Get voice client
+    voice_client = await find_voice_client(client, interaction)
+    if not voice_client:
+        await interaction.followup.send('Not in a voice channel.')
+        return
+    if not queue['history']:
+        await interaction.followup.send('History empty.')
+        return
+
+    # Show history
+    reply = 'Song History:'
+    for i, (url, user) in enumerate(queue['history']):
+        reply += f'\n{i+1}. `{get_title_from_link(url)} ({user.name})`'
     await interaction.followup.send(reply)

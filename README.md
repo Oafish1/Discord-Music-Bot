@@ -1,8 +1,10 @@
-# Discord Music Bot
+# Magic Music Bot
 
 Barebones music bot for discord that works with YouTube.
 
 ## Functions
+
+Behavior of these functions can be modified by changing the values in the `.config` file.
 
 `/join`: Join the voice channel\
 `/leave`: Leave the voice channel\
@@ -13,6 +15,7 @@ Barebones music bot for discord that works with YouTube.
 `/current`: Show the currently playing song\
 `/next`: Show the next song\
 `/queue`: Display all songs in the queue\
+`/history`: Display previously played songs\
 `/sync_local`: Sync server-specific commands\
 `/sync_global`: Sync server commands with global commands (only available after running `sync_local` on your home server)
 

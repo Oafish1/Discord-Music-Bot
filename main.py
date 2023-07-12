@@ -11,16 +11,6 @@ from functions import *
 from utilities import *
 
 
-# TODO
-# HIGH PRIORITY Change name to magic music bot
-# HIGH PRIORITY Disable heartbeat warning (for input to OAuth)
-# What should the publicity of the `sync_local` command be?
-# Add timeout to messages
-# Add auto-leave on program exit
-# Detect channel change
-# Implement whitelist
-
-
 # Load environment
 load_dotenv()
 BOT_TOKEN = os.getenv('BOT_TOKEN')
@@ -58,7 +48,7 @@ async def on_ready():
 
 # Commands
 @tree.command(name='sync_global', description='Synchronize commands globally', guild=discord.Object(id=HOME_GUILD_ID))
-async def command_join(interaction):
+async def command_sync_global(interaction):
     await interaction.response.defer(ephemeral=True)
     # Reject if not dev
     # owner = interaction.user == interaction.guild.owner
@@ -74,7 +64,7 @@ async def command_join(interaction):
 
 
 @tree.command(name='sync_local', description='Synchronize commands locally')
-async def command_join(interaction):
+async def command_sync_local(interaction):
     await interaction.response.defer(ephemeral=True)
     # Reject if not dev, owner, or admin
     owner = interaction.user == interaction.guild.owner
@@ -131,7 +121,7 @@ async def command_resume(interaction):
 
 
 @tree.command(name='current', description='Show the currently playing song')
-async def command_playing(interaction):
+async def command_current(interaction):
     await interaction.response.defer(ephemeral=True)
     loop = asyncio.get_running_loop()
     loop.create_task(previewCurrent(client, interaction))
@@ -149,6 +139,13 @@ async def command_queue(interaction):
     await interaction.response.defer(ephemeral=True)
     loop = asyncio.get_running_loop()
     loop.create_task(previewQueue(client, interaction))
+
+
+@tree.command(name='history', description='Show the previously played songs')
+async def command_history(interaction):
+    await interaction.response.defer(ephemeral=True)
+    loop = asyncio.get_running_loop()
+    loop.create_task(previewHistory(client, interaction))
 
 
 # Run

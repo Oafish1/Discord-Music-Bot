@@ -1,5 +1,6 @@
 import asyncio
 import struct
+import warnings
 
 import discord
 import ffmpeg
@@ -7,26 +8,9 @@ import pydub
 from pytube import YouTube
 
 
-# TODO
-# HIGH PRIORITY Add song history
-# HIGH PRIORITY Cut playlist tag from YouTube URL
-# HIGH PRIORITY Remove FFMPEG printing, add debug prints for HOME_GUILD
-# MEDIUM PRIORITY Preload video on request using async ffmpeg
-# MEDIUM PRIORITY Pass oauth message to end-user, rather than to server.  Make async so heartbeat doesn't die
-# Store creds for each guild?
-# Add message for skipping song/reject if bad link instead of adding to queue
-# Maybe skip to song in queue option?  Maybe reorder?
-# Replace song function?
-# Cleaner solution for `PCMAudio`
-# Add crossfade between songs with pydub
-# Add search feature for !play
-# Add functionality for stream?
-# Check which device works with InnerTube
-# sort based on quality (already done?)
-# Maybe call `after` after rather than recurse
-# Refine `is_youtube_link`
-# Store queueing user
-# Stream music rather than download all at once
+# Config
+with open('.config', 'r') as f:
+    exec(f.read())
 
 
 ### General utility
@@ -49,14 +33,57 @@ async def find_voice_client(client, interaction, tries=1):
     return voice_client
 
 
+def get_queue_hash(interaction):
+    return f'{interaction.guild.id}'
+
+
+def erase_queue(client, interaction):
+    hash = get_queue_hash(interaction)
+    if hash in client.queues:
+        client.queues.pop(hash)
+
+
 def get_queue(client, interaction):
     # Make identifier
     # Right now, this is per-server queue
-    hash = f'{interaction.guild.id}'
+    hash = get_queue_hash(interaction)
     if not hash in client.queues:
         # Stored as (Queue, [Current URL])
-        client.queues[hash] = ([], [None])
+        client.queues[hash] = {
+            'current': [],
+            'queue': [],
+            'history': [],
+        }
     return client.queues[hash]
+
+
+def add_to_queue(client, interaction, *, url):
+    # Get queue
+    queue = get_queue(client, interaction)
+    # Check if full
+    if len(queue['queue']) >= MAX_QUEUE:
+        return False
+    # Add to queue
+    queue['queue'].append((url, interaction.user))  # Could add lockfile but that's overkill
+
+    return queue
+
+
+def cycle_queue(client, interaction):
+    # Get queue
+    queue = get_queue(client, interaction)
+    # Move current to history
+    if queue['current']:
+        queue['history'].insert(0,  queue['current'].pop(0))
+        if len(queue['history']) > MAX_QUEUE_HISTORY:
+            queue['history'].pop(-1)
+    # Pop from queue to current
+    if queue['queue']:
+        queue['current'].append(queue['queue'].pop(0))
+        if len(queue['current']) > 1:  # Could just overwrite, but where's the fun in that?  This way we know if there's a race condition
+            warnings.warn(f'Current now has length {len(queue["current"])} when it should be <=1.')
+
+    return queue
 
 
 def is_youtube_link(url):
@@ -84,49 +111,6 @@ def get_title_from_link(url):
     # Only works for YouTube
     if not is_youtube_link(url): return url
     return YouTube(url).title
-
-
-### Play functions
-async def play_next_queue(client, voice_client):
-    if not get_queue(client, voice_client)[0]:
-        get_queue(client, voice_client)[1][0] = None
-        return
-    # Get loop
-    loop = asyncio.get_running_loop()
-    url = get_queue(voice_client.client, voice_client)[1][0] = get_queue(client, voice_client)[0].pop(0)  # Need to set here otherwise race condition in `play`
-    await play_url(voice_client, url, after=lambda err: loop.create_task(play_next_queue(client, voice_client)))
-
-
-async def play_url(voice_client, url, after=None):
-    # Play if not YouTube
-    if not is_youtube_link(url):
-        # Can't FFmpegPCMAudio directly b/c youtube is blocked
-        voice_client.play(discord.FFmpegPCMAudio(url))
-        return
-
-    # Find stream link
-    # https://stackoverflow.com/a/67237301
-    # Oauth needed for age-restricted, unlisted, or private videos
-    yt = get_youtube_from_link(url)
-    stream_url = yt.streams.filter(only_audio=True)[0].url
-    download = (
-        ffmpeg
-            .input(stream_url)
-            .output('pipe:', format='s16le', acodec='pcm_s16le', ar=48000, loglevel='error')
-            .run_async(pipe_stdout=True)
-    )
-    data, _ = download.communicate()
-
-    # Normalize with Pydub
-    sound = pydub.AudioSegment(data=data, sample_width=2, frame_rate=48000, channels=2)
-    sound = pydub.effects.normalize(sound, headroom=20)  # 6 is standard, but also very loud for most
-    # sound.export("audio.wav", format="wav")  # DEBUG
-
-    # Read as file/stream
-    audio = RawReader(sound.raw_data)
-
-    # Play
-    voice_client.play(audio, after=after)
 
 
 ### Classes

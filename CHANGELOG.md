@@ -1,3 +1,14 @@
+### 2023-07-12
+- Add `.config` file for configuring bot parameters
+- Add join logic for `/play`
+- Add `MAX_QUEUE` and `MAX_QUEUE_HISTORY` parameters
+- Add user name display in verbose song output commands (`/current`, `/next`, etc.)
+- Added `/history` command
+- Change `client.queues` default hierarchy to add `'history'`
+- Disable `/join` command if the bot would rejoin the same channel
+- Renamed to `Magic Music Bot`
+- Replace queue tuple with dictionary for expandability
+
 ### 2023-07-10 (3)
 - Await commands which modify rather than add to loop, avoid race conditions
 - Bugfix in `play` for weird behavior with multiple songs rapidly queued and paused songs
