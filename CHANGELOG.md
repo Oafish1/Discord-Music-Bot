@@ -1,4 +1,7 @@
-### 2023-07-12
+### 2023-07-12 (2)
+- Upload `.config` file
+
+### 2023-07-12 (1)
 - Add `.config` file for configuring bot parameters
 - Add join logic for `/play`
 - Add `MAX_QUEUE` and `MAX_QUEUE_HISTORY` parameters

@@ -1,0 +1,7 @@
+# Cache Files
+__*
+
+# Automation and Auth Files
+.env
+*.bat
+launch.json
