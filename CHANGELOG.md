@@ -1,3 +1,6 @@
+### 2023-08-24
+- Small update to `cipher.py`
+
 ### 2023-07-12 (2)
 - Upload `.config` file
 
